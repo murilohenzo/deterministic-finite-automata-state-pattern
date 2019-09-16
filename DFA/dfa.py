@@ -1,6 +1,5 @@
 from itertools import chain
 
-
 class AutomatoFinitoDeterministico:
 
     def __init__(self, quantidadeDeEstados):
@@ -18,10 +17,11 @@ class AutomatoFinitoDeterministico:
         estadoAtual = estadoInicial
         keys = set(chain.from_iterable(i.keys() for i in estadosDeTransicao.values()))
         conjuntoBooleano = [int(caractere) in keys for caractere in linguagemDeEntrada]
-        for caractere in conjuntoBooleano:
-           if caractere != True:
+        for idx in range(len(conjuntoBooleano)):
+
+          if conjuntoBooleano[idx] != True:
               estadoAtual = None
               return estadoAtual in conjuntoDeAceitacao
-           else:
-               estadoAtual = estadosDeTransicao[estadoAtual][int(caractere)]
-        return estadoAtual not in conjuntoDeAceitacao
+          else:
+               estadoAtual = estadosDeTransicao[estadoAtual][linguagemDeEntrada[idx]]
+        return estadoAtual in conjuntoDeAceitacao
