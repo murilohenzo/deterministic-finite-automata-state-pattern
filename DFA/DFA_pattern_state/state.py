@@ -1,80 +1,179 @@
 from graphviz import Digraph
 
-class PedidoEstado(object):
-    "Classe básica abstrata do estado de um pedido"
 
-    nome = "estado"
-    permitido = []
+class TransicaoNegada(Exception):
+    pass
 
-    def transicao(self, estado):
-        if estado.nome in self.permitido:
-            print(f"Estado [{self}] ==> alternado para novo estado de [{estado.nome}]")
-            self.__class__ = estado
-        else:
-            print(f"Estado {self} ==> alternado para {estado.nome} negado")
+
+class PedidoEstadoInterface(object):
+    """
+    Classe básica abstrata do estado de um pedido
+    """
+
+    def criar_pedido(self):
+        raise TransicaoNegada("Transição negada: Criar Pedido")
+
+    def novo_produto(self):
+        raise TransicaoNegada("Transição negada: Novo Produto")
+
+    def pagamento_pendente(self):
+        raise TransicaoNegada("Transição negada: Pagamento Pendente")
+
+    def pedido_aprovado(self):
+        raise TransicaoNegada("Transição negada: Pedido Aprovado")
+
+    def em_transporte(self):
+        raise TransicaoNegada("Transição negada: Em Transporte")
+
+    def entregue(self):
+        raise TransicaoNegada("Transição negada: Entregue")
+
+    def entrega_finalizada(self):
+        raise TransicaoNegada("Transição negada: Entrega Finalizada")
+
+    def pedido_cancelado(self):
+        raise TransicaoNegada("Transição negada: Pedido Cancelado")
+
+    def extraviado(self):
+        raise TransicaoNegada("Transição negada: Extraviado")
 
     def __str__(self):
-        return self.nome
+        return self.nome if hasattr(self, 'nome') else self.__class__.__name__
 
-class FazerPedido(PedidoEstado):
+
+class FazerPedido(PedidoEstadoInterface):
     nome = 'Fazer Pedido'
-    permitido = ['Novo Produto', 'Cancelado']
 
-class NovoProduto(PedidoEstado):
+    def novo_produto(self):
+        return NovoProduto()
+
+    def pedido_cancelado(self):
+        return PedidoCancelado()
+
+
+class NovoProduto(PedidoEstadoInterface):
     nome = "Novo Produto"
-    permitido = ['Pagamento Pendente' ,'Cancelado']
 
-class PagamentoPendente(PedidoEstado):
+    def pagamento_pendente(self):
+        return PagamentoPendente()
+
+    def pedido_cancelado(self):
+        return PedidoCancelado()
+
+
+class PagamentoPendente(PedidoEstadoInterface):
     nome = "Pagamento Pendente"
-    permitido = ['Aprovado', 'Cancelado']
 
-class PedidoAprovado(PedidoEstado):
+    def pedido_aprovado(self):
+        return PedidoAprovado()
+
+    def pedido_cancelado(self):
+        return PedidoCancelado()
+
+
+class PedidoAprovado(PedidoEstadoInterface):
     nome = 'Aprovado'
-    permitido = ['Em Transporte', 'Cancelado']
 
-class EmTransporte(PedidoEstado):
+    def em_transporte(self):
+        return EmTransporte()
+
+    def pedido_cancelado(self):
+        return PedidoCancelado()
+
+
+class EmTransporte(PedidoEstadoInterface):
     nome = "Em Transporte"
-    permitido = ['Entregue', 'Cancelado']
 
-class Entregue(PedidoEstado):
+    def entregue(self):
+        return Entregue()
+
+    def pedido_cancelado(self):
+        return PedidoCancelado()
+
+
+class Entregue(PedidoEstadoInterface):
     nome = "Entregue"
-    permitido = ['Extraviado', 'Finalizado']
 
-class ProdutoCancelado(PedidoEstado):
+    def extraviado(self):
+        return Extraviado()
+
+    def entrega_finalizada(self):
+        return EntregaFinalizada()
+
+
+class PedidoCancelado(PedidoEstadoInterface):
     nome = 'Cancelado'
-    permitido = None
 
-class EntreguaFinalizada(PedidoEstado):
+
+class EntregaFinalizada(PedidoEstadoInterface):
     nome = "Finalizado"
-    permitido = None
 
-class Extravido(PedidoEstado):
+
+class Extraviado(PedidoEstadoInterface):
     nome = "Extraviado"
-    permitido = None
 
-class Produto(object):
 
-    def __init__(self, modelo = 'PS4'):
-        self.modelo = modelo
-        self.estado = FazerPedido()
+class Pedido(object):
 
-    def mudar(self, estado):
-        self.estado.transicao(estado)
+    def __init__(self, estado):
+        self.estado = estado
+
+    def mudar(self, novo_estado):
+        if isinstance(novo_estado, PedidoEstadoInterface):
+            self.estado = novo_estado
+            print("Estado:", self.pegar_estado())
+        else:
+            raise ValueError
+
+    def pegar_estado(self):
+        return self.estado
+
+    def criar_pedido(self):
+        self.mudar(self.estado.novo_produto())
+
+    def adicionar_produto(self):
+        self.mudar(self.estado.novo_produto())
+
+    def set_pagamento_pendente(self):
+        self.mudar(self.estado.pagamento_pendente())
+
+    def set_pedido_aprovado(self):
+        self.mudar(self.estado.pedido_aprovado())
+
+    def set_em_transporte(self):
+        self.mudar(self.estado.em_transporte())
+
+    def set_entregue(self):
+        self.mudar(self.estado.entregue())
+
+    def set_entrega_finalizada(self):
+        self.mudar(self.estado.entrega_finalizada())
+
+    def set_pedido_cancelado(self):
+        self.mudar(self.estado.pedido_cancelado())
+
+    def set_extraviado(self):
+        self.mudar(self.estado.extraviado())
+
 
 if __name__ == "__main__":
-    produto = Produto()
-    #produto.mudar(ProdutoCancelado)
-    produto.mudar(NovoProduto)
-    #produto.mudar(ProdutoCancelado)
-    produto.mudar(PagamentoPendente)
-    #produto.mudar(ProdutoCancelado)
-    produto.mudar(PedidoAprovado)
-    #produto.mudar(ProdutoCancelado)
-    produto.mudar(EmTransporte)
-    #produto.mudar(ProdutoCancelado)
-    produto.mudar(Entregue)
-    produto.mudar(EntreguaFinalizada)
-    #produto.mudar(Extravido)
+    produto = Pedido(NovoProduto())
+
+    try:
+        # produto.set_pedido_cancelado()
+        # produto.adicionar_produto()
+        # produto.set_pedido_cancelado()
+        produto.set_pagamento_pendente()
+        # produto.set_pedido_cancelado()
+        produto.set_pedido_aprovado()
+        # produto.set_pedido_cancelado()
+        produto.set_em_transporte()
+        # produto.set_pedido_cancelado()
+        produto.set_entregue()
+        produto.set_entrega_finalizada()
+        produto.set_extraviado()
+    except TransicaoNegada as err:
+        print(f"Não é possível mudar para o estado pois -> {str(err)}, a partir do estado {produto.pegar_estado()}")
 
     f = Digraph('Automato Finito Deterministico')
     f.attr(rankdir='LR', size='8,5')
